@@ -10,6 +10,8 @@ from django.contrib.auth import authenticate, login, logout
 from django.core import signing
 from datetime import timedelta
 import calendar
+import os
+import uuid
 
 from .models import Product, Order, Enquiry
 from .serializers import ProductSerializer, OrderSerializer, EnquirySerializer
@@ -489,3 +491,48 @@ def admin_logout(request):
     """
     logout(request)
     return Response({"success": True, "message": "Logged out successfully."})
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def upload_product_image(request):
+    """
+    Direct upload endpoint for product photos from local device.
+    Saves to public uploads and returns web-accessible URL.
+    """
+    file_obj = request.FILES.get("file") or request.FILES.get("image")
+    if not file_obj:
+        return Response({"error": "No file uploaded. Please select an image."}, status=status.HTTP_400_BAD_REQUEST)
+
+    import os, re, time
+    ext = os.path.splitext(file_obj.name)[1].lower()
+    if ext not in [".jpg", ".jpeg", ".png", ".webp", ".svg"]:
+        return Response({"error": "Only JPG, PNG, WebP or SVG images are supported."}, status=status.HTTP_400_BAD_REQUEST)
+
+    safe_name = re.sub(r"[^a-zA-Z0-9_\-\.]", "_", file_obj.name)
+    filename = f"{int(time.time())}_{safe_name}"
+
+    # Save to frontend/public/uploads/ for instant Next.js serving
+    frontend_upload_dir = os.path.join(settings.BASE_DIR.parent, "frontend", "public", "uploads")
+    os.makedirs(frontend_upload_dir, exist_ok=True)
+    target_path = os.path.join(frontend_upload_dir, filename)
+
+    with open(target_path, "wb+") as dest:
+        for chunk in file_obj.chunks():
+            dest.write(chunk)
+
+    # Also keep a copy in backend media/products
+    try:
+        backend_media_dir = os.path.join(settings.MEDIA_ROOT, "products")
+        os.makedirs(backend_media_dir, exist_ok=True)
+        import shutil
+        shutil.copyfile(target_path, os.path.join(backend_media_dir, filename))
+    except Exception:
+        pass
+
+    return Response({
+        "success": True,
+        "url": f"/uploads/{filename}",
+        "filename": filename
+    })
+

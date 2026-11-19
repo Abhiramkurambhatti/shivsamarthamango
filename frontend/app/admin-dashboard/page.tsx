@@ -39,6 +39,8 @@ import {
   EyeOff,
   ShieldCheck,
   AlertCircle,
+  Upload,
+  Image as ImageIcon,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────
@@ -59,6 +61,8 @@ export interface ProductItem {
   compare_at_price?: number | string | null;
   stock_quantity: number;
   image_url: string;
+  available_units?: string[];
+  unit_prices?: Record<string, number>;
   is_featured: boolean;
   is_active: boolean;
   created_at?: string;
@@ -2853,24 +2857,115 @@ function ProductFormModal({
   const [description, setDescription] = useState(initialData?.description || "");
   const [isActive, setIsActive] = useState(initialData?.is_active ?? true);
   const [isFeatured, setIsFeatured] = useState(initialData?.is_featured ?? true);
+
+  // Unit Options State (Dozen & Grams & Box & Kg)
+  const defaultUnits = ["box", "dozen", "grams", "kg"];
+  const [availableUnits, setAvailableUnits] = useState<string[]>(
+    Array.isArray(initialData?.available_units) && initialData.available_units.length > 0
+      ? initialData.available_units
+      : defaultUnits
+  );
+  const [unitPrices, setUnitPrices] = useState<Record<string, string>>(() => {
+    const pMap: Record<string, string> = {};
+    if (initialData?.unit_prices) {
+      Object.entries(initialData.unit_prices).forEach(([u, val]) => {
+        pMap[u] = String(val);
+      });
+    }
+    return pMap;
+  });
+
+  // Local Image Upload from Device State
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const toggleUnit = (u: string) => {
+    setAvailableUnits((prev) =>
+      prev.includes(u) ? prev.filter((item) => item !== u) : [...prev, u]
+    );
+  };
+
+  const handleUnitCustomPrice = (u: string, val: string) => {
+    setUnitPrices((prev) => ({ ...prev, [u]: val }));
+  };
+
+  // Direct file picker upload handler
+  const handleDeviceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setUploadError(null);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      let res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        res = await fetch(`${API_URL}/upload/product-image/`, {
+          method: "POST",
+          body: formData,
+        });
+      }
+
+      if (!res.ok) {
+        throw new Error("Failed to upload image. Please try another file.");
+      }
+
+      const data = await res.json();
+      if (data.url) {
+        setImageUrl(data.url);
+      }
+    } catch (err: any) {
+      console.error(err);
+      setUploadError(err.message || "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     setErrorMsg(null);
 
+    // Format clean unit_prices dictionary with numeric values
+    const finalUnitPrices: Record<string, number> = {};
+    const baseP = parseFloat(price) || 0;
+    const wKg = parseFloat(weightKg) || 5;
+
+    availableUnits.forEach((u) => {
+      if (unitPrices[u] && parseFloat(unitPrices[u]) > 0) {
+        finalUnitPrices[u] = parseFloat(unitPrices[u]);
+      } else {
+        // Automatic default price fallback per unit
+        if (u === "dozen") finalUnitPrices[u] = Math.round(baseP * 0.6);
+        else if (u === "grams" || u === "500g") finalUnitPrices[u] = Math.round((baseP / wKg) * 0.5);
+        else if (u === "kg") finalUnitPrices[u] = Math.round(baseP / wKg);
+        else finalUnitPrices[u] = baseP;
+      }
+    });
+
     const payload = {
       name,
       name_mr: nameMr,
       category,
-      price: parseFloat(price) || 0,
+      price: baseP,
       compare_at_price: comparePrice ? parseFloat(comparePrice) : null,
-      weight_kg: parseFloat(weightKg) || 5,
+      weight_kg: wKg,
       stock_quantity: parseInt(stockQuantity) || 0,
       image_url: imageUrl,
       description,
+      available_units: availableUnits.length > 0 ? availableUnits : ["box"],
+      unit_prices: finalUnitPrices,
       is_active: isActive,
       is_featured: isFeatured,
     };
@@ -2916,7 +3011,7 @@ function ProductFormModal({
           background: "#fff",
           borderRadius: 22,
           padding: 28,
-          maxWidth: 620,
+          maxWidth: 680,
           width: "100%",
           maxHeight: "90vh",
           overflowY: "auto",
@@ -2937,6 +3032,7 @@ function ProductFormModal({
         )}
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {/* 1. Name fields */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
               <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#687268", marginBottom: 4 }}>
@@ -2965,6 +3061,7 @@ function ProductFormModal({
             </div>
           </div>
 
+          {/* 2. Category, Base Price, Weight */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
             <div>
               <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#687268", marginBottom: 4 }}>
@@ -2983,7 +3080,7 @@ function ProductFormModal({
 
             <div>
               <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#687268", marginBottom: 4 }}>
-                Price (₹)*
+                Base Box Price (₹)*
               </label>
               <input
                 type="number"
@@ -2996,7 +3093,7 @@ function ProductFormModal({
 
             <div>
               <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#687268", marginBottom: 4 }}>
-                Weight (kg)*
+                Base Weight (kg)*
               </label>
               <input
                 type="number"
@@ -3009,6 +3106,203 @@ function ProductFormModal({
             </div>
           </div>
 
+          {/* 3. UNIT CONFIGURATION SECTION (Requirement 2: Dozen, Grams, Box, Kg) */}
+          <div
+            style={{
+              background: "#faf7f0",
+              border: "1.5px solid #e9dfcf",
+              borderRadius: 14,
+              padding: "14px 16px",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <label style={{ fontSize: 13, fontWeight: 700, color: "#172b20", margin: 0, display: "flex", alignItems: "center", gap: 6 }}>
+                <span>📦</span> Available Units &amp; Sizing Options (Dozen &amp; Grams)
+              </label>
+              <span style={{ fontSize: 11, color: "#c89a4b", fontWeight: 700 }}>
+                {availableUnits.length} units active
+              </span>
+            </div>
+            <p style={{ margin: "0 0 12px", fontSize: 11, color: "#687268" }}>
+              Enable which units customers can choose on the storefront, and optionally set custom pricing per unit.
+            </p>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              {[
+                { key: "dozen", label: "Dozen (डझन - 12 Mangoes)", defaultHint: "e.g. ₹1,440" },
+                { key: "grams", label: "Grams (५०० ग्रॅम - Trial Pack)", defaultHint: "e.g. ₹240" },
+                { key: "box", label: "Standard Peti Box (पेटी - 5kg)", defaultHint: "Default Base Price" },
+                { key: "kg", label: "Kilogram (१ किलो - Single Kg)", defaultHint: "e.g. ₹480" },
+              ].map(({ key, label, defaultHint }) => {
+                const isSelected = availableUnits.includes(key);
+                return (
+                  <div
+                    key={key}
+                    style={{
+                      background: isSelected ? "#ffffff" : "rgba(0,0,0,0.02)",
+                      border: isSelected ? "1.5px solid #214638" : "1px solid #e2d9cb",
+                      borderRadius: 10,
+                      padding: "10px 12px",
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontWeight: 700, fontSize: 12, color: "#172b20" }}>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleUnit(key)}
+                        style={{ accentColor: "#214638", width: 16, height: 16 }}
+                      />
+                      <span>{label}</span>
+                    </label>
+
+                    {isSelected && (
+                      <div style={{ marginTop: 8, paddingTop: 6, borderTop: "1px dashed #e8e0d2" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{ fontSize: 11, color: "#687268" }}>Price (₹):</span>
+                          <input
+                            type="number"
+                            placeholder={defaultHint}
+                            value={unitPrices[key] || ""}
+                            onChange={(e) => handleUnitCustomPrice(key, e.target.value)}
+                            style={{
+                              width: "100%",
+                              padding: "4px 8px",
+                              borderRadius: 6,
+                              border: "1px solid #d3cbbd",
+                              fontSize: 12,
+                              fontWeight: 700,
+                              color: "#214638",
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 4. ATTACH PHOTO & DIRECT DEVICE UPLOAD (Requirement 3) */}
+          <div
+            style={{
+              background: "#faf7f0",
+              border: "1.5px solid #e9dfcf",
+              borderRadius: 14,
+              padding: "14px 16px",
+            }}
+          >
+            <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: "#172b20", marginBottom: 6 }}>
+              🖼️ Product Photo (Attach from Local Device or URL)
+            </label>
+
+            {uploadError && (
+              <div style={{ padding: "6px 10px", background: "#fee2e2", color: "#b91c1c", borderRadius: 8, fontSize: 12, marginBottom: 10 }}>
+                {uploadError}
+              </div>
+            )}
+
+            <div style={{ display: "grid", gridTemplateColumns: "110px 1fr", gap: 14, alignItems: "center" }}>
+              {/* Image Preview Thumbnail */}
+              <div
+                style={{
+                  width: 110,
+                  height: 85,
+                  borderRadius: 10,
+                  overflow: "hidden",
+                  border: "1.5px solid #d3cbbd",
+                  background: "#eee",
+                  display: "grid",
+                  placeItems: "center",
+                  position: "relative",
+                }}
+              >
+                {imageUrl ? (
+                  <img
+                    src={imageUrl}
+                    alt="Product preview"
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                ) : (
+                  <span style={{ fontSize: 24 }}>🥭</span>
+                )}
+                {uploading && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      background: "rgba(0,0,0,0.6)",
+                      display: "grid",
+                      placeItems: "center",
+                      color: "#fff",
+                      fontSize: 10,
+                      fontWeight: 700,
+                    }}
+                  >
+                    Uploading...
+                  </div>
+                )}
+              </div>
+
+              {/* Upload Controls */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {/* Direct File Picker Input */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <label
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "8px 16px",
+                      borderRadius: 10,
+                      background: "#214638",
+                      color: "#fff",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: uploading ? "wait" : "pointer",
+                      boxShadow: "0 2px 8px rgba(33, 70, 56, 0.25)",
+                    }}
+                  >
+                    <Upload size={14} />
+                    <span>{uploading ? "अपलोड होत आहे..." : "Upload from Device (स्थानिक फोटो निवडा)"}</span>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                      onChange={handleDeviceUpload}
+                      disabled={uploading}
+                      style={{ display: "none" }}
+                    />
+                  </label>
+
+                  <span style={{ fontSize: 11, color: "#8d998d" }}>
+                    JPG, PNG, WebP (Max 10MB)
+                  </span>
+                </div>
+
+                {/* Direct URL field */}
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 11, color: "#687268", whiteSpace: "nowrap" }}>or Image Path:</span>
+                  <input
+                    type="text"
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                    placeholder="/images/devgad-hapus.jpg or /uploads/..."
+                    style={{
+                      width: "100%",
+                      padding: "6px 10px",
+                      borderRadius: 6,
+                      border: "1px solid #d3cbbd",
+                      fontSize: 12,
+                      background: "#fff",
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 5. Stock & Compare Price */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
               <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#687268", marginBottom: 4 }}>
@@ -3024,24 +3318,25 @@ function ProductFormModal({
 
             <div>
               <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#687268", marginBottom: 4 }}>
-                Image URL (Local or Web)
+                Compare At Price (Original MRP for Strikethrough)
               </label>
               <input
-                type="text"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="/images/devgad-hapus.jpg"
+                type="number"
+                value={comparePrice}
+                onChange={(e) => setComparePrice(e.target.value)}
+                placeholder="e.g. 2800"
                 style={{ width: "100%", padding: 9, borderRadius: 8, border: "1px solid #d3cbbd", fontSize: 13 }}
               />
             </div>
           </div>
 
+          {/* 6. Description */}
           <div>
             <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#687268", marginBottom: 4 }}>
               Description &amp; Origin Notes
             </label>
             <textarea
-              rows={3}
+              rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Authentic GI-tagged Devgad Alphonso with rich golden aroma and sweet non-fibrous pulp."
@@ -3049,7 +3344,8 @@ function ProductFormModal({
             />
           </div>
 
-          <div style={{ display: "flex", gap: 20, alignItems: "center", margin: "6px 0" }}>
+          {/* 7. Visibility Toggles */}
+          <div style={{ display: "flex", gap: 20, alignItems: "center", margin: "2px 0" }}>
             <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer" }}>
               <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
               <span>Visible in Public Shop</span>
@@ -3060,6 +3356,7 @@ function ProductFormModal({
             </label>
           </div>
 
+          {/* 8. Submit buttons */}
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 10 }}>
             <button
               type="button"

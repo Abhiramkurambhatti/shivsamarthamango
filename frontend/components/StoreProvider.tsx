@@ -1,20 +1,23 @@
 "use client";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-type CartItem = {
+export type CartItem = {
   id: number;
+  cartKey: string;
   name: string;
   price: number;
   weight: number;
   image_url: string;
   qty: number;
+  unit: string;
+  unitLabel?: string;
 };
 
 type Ctx = {
   cart: CartItem[];
-  add: (p: any) => void;
-  change: (id: number, n: number) => void;
-  remove: (id: number) => void;
+  add: (p: any, selectedUnit?: string, customPrice?: number, customUnitLabel?: string) => void;
+  change: (cartKeyOrId: string | number, n: number) => void;
+  remove: (cartKeyOrId: string | number) => void;
   count: number;
   total: number;
   lang: string;
@@ -32,7 +35,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     try {
-      setCart(JSON.parse(localStorage.getItem("ssh-cart") || "[]"));
+      const raw = JSON.parse(localStorage.getItem("ssh-cart") || "[]");
+      // Migration for old items missing cartKey or unit
+      const normalized = raw.map((item: any) => ({
+        ...item,
+        cartKey: item.cartKey || `${item.id}-${item.unit || "box"}`,
+        unit: item.unit || "box",
+        unitLabel: item.unitLabel || (item.unit === "dozen" ? "१ डझन (1 Dozen)" : item.unit === "grams" ? "५०० ग्रॅम (500g)" : item.unit === "kg" ? "१ किलो (1 Kg)" : "५ किलो पेटी (5kg Box)")
+      }));
+      setCart(normalized);
       setLang(localStorage.getItem("ssh-lang") || "mr");
       setTheme(localStorage.getItem("ssh-theme") || "light");
     } catch {}
@@ -51,28 +62,61 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("ssh-theme", theme);
   }, [theme]);
 
-  const add = (p: any) =>
+  const add = (p: any, selectedUnit?: string, customPrice?: number, customUnitLabel?: string) => {
+    const unit = selectedUnit || (p.available_units && p.available_units[0]) || "box";
+    const itemPrice = customPrice !== undefined && customPrice !== null
+      ? Number(customPrice)
+      : p.unit_prices && p.unit_prices[unit]
+      ? Number(p.unit_prices[unit])
+      : Number(p.price);
+
+    const key = `${p.id}-${unit}`;
+
+    const defaultUnitLabel =
+      unit === "dozen"
+        ? (lang === "mr" ? "१ डझन (Dozen)" : "1 Dozen")
+        : unit === "grams"
+        ? (lang === "mr" ? "५०० ग्रॅम (Grams)" : "500 Grams")
+        : unit === "kg"
+        ? (lang === "mr" ? "१ किलो (Kg)" : "1 Kg")
+        : (lang === "mr" ? `${p.weight_kg || 5} किलो पेटी (Box)` : `${p.weight_kg || 5}kg Box`);
+
+    const label = customUnitLabel || defaultUnitLabel;
+
     setCart((old) => {
-      const found = old.find((x) => x.id === p.id);
+      const found = old.find((x) => x.cartKey === key || (x.id === p.id && x.unit === unit));
       return found
-        ? old.map((x) => (x.id === p.id ? { ...x, qty: x.qty + 1 } : x))
+        ? old.map((x) => (x.cartKey === found.cartKey ? { ...x, qty: x.qty + 1 } : x))
         : [
             ...old,
             {
               id: p.id,
-              name: p.name_mr || p.name,
-              price: Number(p.price),
-              weight: Number(p.weight_kg),
+              cartKey: key,
+              name: (lang === "mr" && p.name_mr) ? p.name_mr : p.name,
+              price: itemPrice,
+              weight: Number(p.weight_kg || 5),
               image_url: p.image_url,
               qty: 1,
+              unit,
+              unitLabel: label,
             },
           ];
     });
+  };
 
-  const change = (id: number, n: number) =>
-    setCart((old) => old.map((x) => (x.id === id ? { ...x, qty: Math.max(1, n) } : x)));
+  const change = (cartKeyOrId: string | number, n: number) =>
+    setCart((old) =>
+      old.map((x) =>
+        x.cartKey === String(cartKeyOrId) || x.id === Number(cartKeyOrId)
+          ? { ...x, qty: Math.max(1, n) }
+          : x
+      )
+    );
 
-  const remove = (id: number) => setCart((old) => old.filter((x) => x.id !== id));
+  const remove = (cartKeyOrId: string | number) =>
+    setCart((old) =>
+      old.filter((x) => x.cartKey !== String(cartKeyOrId) && x.id !== Number(cartKeyOrId))
+    );
 
   const value = useMemo(
     () => ({

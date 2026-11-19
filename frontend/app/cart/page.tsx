@@ -36,18 +36,33 @@ export default function Cart() {
         ) : (
           <>
             {s.cart.map((i) => (
-              <div className="cartrow" key={i.id}>
+              <div className="cartrow" key={i.cartKey || i.id}>
                 <div>
-                  <b style={{ fontSize: 16 }}>{i.name}</b>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <b style={{ fontSize: 16 }}>{i.name}</b>
+                    <span
+                      style={{
+                        padding: "2px 8px",
+                        borderRadius: 6,
+                        background: "rgba(200, 154, 75, 0.15)",
+                        border: "1px solid rgba(200, 154, 75, 0.4)",
+                        color: "var(--green)",
+                        fontSize: 11,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {i.unitLabel || (i.unit === "dozen" ? (isMr ? "१ डझन" : "1 Dozen") : i.unit === "grams" ? (isMr ? "५०० ग्रॅम" : "500g") : i.unit === "kg" ? (isMr ? "१ किलो" : "1 Kg") : (isMr ? `${i.weight} किलो पेटी` : `${i.weight}kg box`))}
+                    </span>
+                  </div>
                   <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>
-                    {i.weight} kg · ₹{i.price.toLocaleString("en-IN")}
+                    {isMr ? "दर:" : "Rate:"} ₹{i.price.toLocaleString("en-IN")} / {i.unit === "dozen" ? (isMr ? "डझन" : "dozen") : i.unit === "grams" ? (isMr ? "५०० ग्रॅम" : "500g") : i.unit === "kg" ? (isMr ? "किलो" : "kg") : (isMr ? "पेटी" : "box")}
                   </div>
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <button className="iconbtn" onClick={() => s.change(i.id, i.qty - 1)}>−</button>
+                  <button className="iconbtn" onClick={() => s.change(i.cartKey || i.id, i.qty - 1)}>−</button>
                   <span style={{ fontWeight: 700, minWidth: 20, textAlign: "center" }}>{i.qty}</span>
-                  <button className="iconbtn" onClick={() => s.change(i.id, i.qty + 1)}>+</button>
+                  <button className="iconbtn" onClick={() => s.change(i.cartKey || i.id, i.qty + 1)}>+</button>
                 </div>
 
                 <div className="line-total" style={{ textAlign: "right" }}>
@@ -55,7 +70,7 @@ export default function Cart() {
                     ₹{(i.price * i.qty).toLocaleString("en-IN")}
                   </b>
                   <button
-                    onClick={() => s.remove(i.id)}
+                    onClick={() => s.remove(i.cartKey || i.id)}
                     style={{ display: "block", border: 0, background: "none", color: "var(--red)", fontSize: 12, cursor: "pointer", marginTop: 4, marginLeft: "auto" }}
                   >
                     {isMr ? "काढून टाका" : "Remove"}
