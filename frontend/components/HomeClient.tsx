@@ -228,35 +228,67 @@ export default function HomeClient({ products }: { products: any[] }) {
 
           <div className="farming-grid">
             <div className="farming-card">
-              <div className="farming-card-icon">
-                <MapPin size={22} />
+              <div className="farming-card-header">
+                <div className="farming-card-icon">
+                  <MapPin size={22} />
+                </div>
+                <span className="farming-card-step">#01</span>
               </div>
               <h3>{t.farming.f1Title}</h3>
               <p>{t.farming.f1Desc}</p>
+              <div style={{ marginTop: 14, paddingTop: 10, borderTop: "1px dashed var(--line)" }}>
+                <span className="showcase-pill">
+                  {isMr ? "🌊 कातळ खनिजे" : "🌊 Laterite Terroir"}
+                </span>
+              </div>
             </div>
 
             <div className="farming-card">
-              <div className="farming-card-icon">
-                <Leaf size={22} />
+              <div className="farming-card-header">
+                <div className="farming-card-icon">
+                  <Leaf size={22} />
+                </div>
+                <span className="farming-card-step">#02</span>
               </div>
               <h3>{t.farming.f2Title}</h3>
               <p>{t.farming.f2Desc}</p>
+              <div style={{ marginTop: 14, paddingTop: 10, borderTop: "1px dashed var(--line)" }}>
+                <span className="showcase-pill">
+                  {isMr ? "🌿 शून्य रसायने" : "🌿 Zero Chemicals"}
+                </span>
+              </div>
             </div>
 
             <div className="farming-card">
-              <div className="farming-card-icon">
-                <Sprout size={22} />
+              <div className="farming-card-header">
+                <div className="farming-card-icon">
+                  <Sprout size={22} />
+                </div>
+                <span className="farming-card-step">#03</span>
               </div>
               <h3>{t.farming.f3Title}</h3>
               <p>{t.farming.f3Desc}</p>
+              <div style={{ marginTop: 14, paddingTop: 10, borderTop: "1px dashed var(--line)" }}>
+                <span className="showcase-pill">
+                  {isMr ? "🌾 पेंढा आडी" : "🌾 Straw Ripened"}
+                </span>
+              </div>
             </div>
 
             <div className="farming-card">
-              <div className="farming-card-icon">
-                <Award size={22} />
+              <div className="farming-card-header">
+                <div className="farming-card-icon">
+                  <Award size={22} />
+                </div>
+                <span className="farming-card-step">#04</span>
               </div>
               <h3>{t.farming.f4Title}</h3>
               <p>{t.farming.f4Desc}</p>
+              <div style={{ marginTop: 14, paddingTop: 10, borderTop: "1px dashed var(--line)" }}>
+                <span className="showcase-pill">
+                  {isMr ? "🏷️ GI मानांकन" : "🏷️ GI Tag No. 497"}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -281,13 +313,29 @@ export default function HomeClient({ products }: { products: any[] }) {
                 {t.heritage.title}
               </h2>
               <p>{t.heritage.lead}</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, margin: "14px 0 18px" }}>
+                <span style={{ fontSize: 12, fontWeight: 600, background: "rgba(255,255,255,0.14)", padding: "4px 10px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.2)" }}>
+                  🏰 {isMr ? "सिंधुदुर्ग व विजयदुर्ग" : "Historic Sea Forts"}
+                </span>
+                <span style={{ fontSize: 12, fontWeight: 600, background: "rgba(255,255,255,0.14)", padding: "4px 10px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.2)" }}>
+                  🌊 {isMr ? "देवगड समुद्रकिनारा" : "Arabian Sea Terroir"}
+                </span>
+                <span style={{ fontSize: 12, fontWeight: 600, background: "rgba(255,255,255,0.14)", padding: "4px 10px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.2)" }}>
+                  🥭 {isMr ? "नारिंग्रे शेवाळे बाग" : "20-Acre Family Farm"}
+                </span>
+              </div>
               <div style={{ marginTop: 22 }}>
                 <Link className="btn gold" href="/heritage">
                   {t.heritage.exploreBtn} <ArrowRight size={16} />
                 </Link>
               </div>
             </div>
-            <div className="heritage-image" />
+            <div className="heritage-image" style={{ position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", bottom: 12, left: 12, right: 12, background: "rgba(16, 44, 34, 0.88)", backdropFilter: "blur(6px)", padding: "8px 14px", borderRadius: 12, color: "#fff", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "space-between", border: "1px solid rgba(255,255,255,0.15)" }}>
+                <span>📍 {isMr ? "नारिंग्रे, देवगड (सिंधुदुर्ग)" : "Naringre, Devgad (Sindhudurg)"}</span>
+                <span style={{ color: "#f7d58b", fontWeight: 700 }}>३५०+ वर्षे वारसा</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
