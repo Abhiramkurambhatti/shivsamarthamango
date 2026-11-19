@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShoppingBag, Sun, Moon, Languages, Menu, X, Phone, MapPin, Mail, ShieldCheck, Lock, ExternalLink, ChevronRight } from "lucide-react";
+import { ShoppingBag, Sun, Moon, Languages, Menu, X, Phone, MapPin, Mail, ShieldCheck, Lock, ExternalLink, ChevronRight, Instagram, Facebook } from "lucide-react";
 import { useStore } from "./StoreProvider";
-import { whatsappUrl, WHATSAPP_NUMBER } from "@/lib/config";
+import { whatsappUrl, WHATSAPP_NUMBER, INSTAGRAM_URL, FACEBOOK_URL } from "@/lib/config";
 import { translations, Language } from "@/lib/translations";
 
 export function SiteHeader() {
@@ -74,6 +74,26 @@ export function SiteHeader() {
             <a href="tel:+919552050093" style={{ color: "#fff", display: "inline-flex", alignItems: "center", gap: 4, textDecoration: "none", fontWeight: 700 }}>
               <Phone size={12} /> +91 95520 50093
             </a>
+            <span style={{ display: "inline-flex", gap: "10px", alignItems: "center", marginLeft: 4 }}>
+              <a
+                href={INSTAGRAM_URL}
+                target="_blank"
+                rel="noreferrer"
+                title="Follow on Instagram (@shivsamarthdevgadhapus)"
+                style={{ color: "#fff", display: "inline-flex", alignItems: "center", opacity: 0.9, transition: "opacity 0.2s" }}
+              >
+                <Instagram size={13} />
+              </a>
+              <a
+                href={FACEBOOK_URL}
+                target="_blank"
+                rel="noreferrer"
+                title="Follow on Facebook (Shivsamarth Devgad Hapus)"
+                style={{ color: "#fff", display: "inline-flex", alignItems: "center", opacity: 0.9, transition: "opacity 0.2s" }}
+              >
+                <Facebook size={13} />
+              </a>
+            </span>
           </span>
         </div>
       </div>
@@ -341,8 +361,54 @@ export function SiteHeader() {
                 <span>{isMr ? "व्यवस्थापक कक्ष (Admin Login)" : "Admin Portal Login"}</span>
               </Link>
 
+              {/* Social Media Links in Drawer */}
+              <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
+                <a
+                  href={INSTAGRAM_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 6,
+                    padding: "8px 10px",
+                    borderRadius: 10,
+                    background: "linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)",
+                    color: "#fff",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    textDecoration: "none",
+                  }}
+                >
+                  <Instagram size={14} /> Instagram
+                </a>
+                <a
+                  href={FACEBOOK_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 6,
+                    padding: "8px 10px",
+                    borderRadius: 10,
+                    background: "#1877F2",
+                    color: "#fff",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    textDecoration: "none",
+                  }}
+                >
+                  <Facebook size={14} /> Facebook
+                </a>
+              </div>
+
               {/* Contact Footer in drawer */}
-              <div style={{ textAlign: "center", fontSize: 11, color: "var(--muted)", marginTop: 4 }}>
+              <div style={{ textAlign: "center", fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
                 📞 +91 95520 50093 · नारिंग्रे, देवगड
               </div>
             </div>
@@ -451,6 +517,59 @@ export function SiteFooter() {
               >
                 💬 {isMr ? "व्हॉट्सॲपवर संपर्क करा" : "WhatsApp Direct"}
               </a>
+            </div>
+
+            {/* Social Media Links */}
+            <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.12)" }}>
+              <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--gold)", marginBottom: 8, letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                {isMr ? "सोशल मीडियावर कनेक्ट व्हा" : "Connect on Social Media"}
+              </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <a
+                  href={INSTAGRAM_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  title="Follow Shiv Samarth Devgad Hapus on Instagram"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    background: "rgba(255,255,255,0.08)",
+                    border: "1px solid rgba(255,255,255,0.18)",
+                    color: "#fff",
+                    padding: "6px 12px",
+                    borderRadius: 999,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    textDecoration: "none",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  <Instagram size={14} style={{ color: "#f472b6" }} /> Instagram
+                </a>
+                <a
+                  href={FACEBOOK_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  title="Follow Shiv Samarth Devgad Hapus on Facebook"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    background: "rgba(255,255,255,0.08)",
+                    border: "1px solid rgba(255,255,255,0.18)",
+                    color: "#fff",
+                    padding: "6px 12px",
+                    borderRadius: 999,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    textDecoration: "none",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  <Facebook size={14} style={{ color: "#60a5fa" }} /> Facebook
+                </a>
+              </div>
             </div>
           </div>
         </div>

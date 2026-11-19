@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { API_URL, whatsappUrl } from "@/lib/config";
+import { API_URL, whatsappUrl, INSTAGRAM_URL, FACEBOOK_URL } from "@/lib/config";
 import { useStore } from "@/components/StoreProvider";
 import { translations, Language } from "@/lib/translations";
-import { MapPin, Phone, Mail, Send } from "lucide-react";
+import { MapPin, Phone, Mail, Send, Instagram, Facebook } from "lucide-react";
 
 export default function ContactPage() {
   const s = useStore();
@@ -134,6 +134,58 @@ export default function ContactPage() {
               >
                 💬 {isMr ? "व्हॉट्सॲपवर त्वरित संपर्क" : "Direct WhatsApp Order"}
               </a>
+            </div>
+
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px dashed var(--line)" }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>
+                {isMr ? "आमच्या सोशल मीडियावर फॉलो करा:" : "Follow Us on Social Media:"}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10 }}>
+                <a
+                  href={INSTAGRAM_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  title="Follow Shiv Samarth Devgad Hapus on Instagram"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    padding: "10px 14px",
+                    borderRadius: 12,
+                    background: "linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)",
+                    color: "#fff",
+                    fontWeight: 700,
+                    fontSize: 13,
+                    textDecoration: "none",
+                    boxShadow: "0 4px 12px rgba(225, 48, 108, 0.2)",
+                  }}
+                >
+                  <Instagram size={16} /> Instagram
+                </a>
+                <a
+                  href={FACEBOOK_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  title="Follow Shiv Samarth Devgad Hapus on Facebook"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    padding: "10px 14px",
+                    borderRadius: 12,
+                    background: "#1877F2",
+                    color: "#fff",
+                    fontWeight: 700,
+                    fontSize: 13,
+                    textDecoration: "none",
+                    boxShadow: "0 4px 12px rgba(24, 119, 242, 0.2)",
+                  }}
+                >
+                  <Facebook size={16} /> Facebook
+                </a>
+              </div>
             </div>
           </div>
         </div>
