@@ -14,6 +14,7 @@ class Product(models.Model):
     compare_at_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     stock_quantity = models.PositiveIntegerField(default=0)
     image_url = models.CharField(max_length=500, blank=True)
+    images = models.JSONField(default=list, blank=True, help_text='List of photo URLs for gallery slider')
     available_units = models.JSONField(default=list, blank=True, help_text='List of allowed units, e.g. ["box","dozen","kg","500g","250g"]')
     unit_prices = models.JSONField(default=dict, blank=True, help_text='Per-unit pricing, e.g. {"dozen": 2400, "500g": 600}')
     is_featured = models.BooleanField(default=False)
@@ -27,6 +28,10 @@ class Product(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
+        if not self.images and self.image_url:
+            self.images = [self.image_url]
+        elif self.images and not self.image_url:
+            self.image_url = self.images[0]
         super().save(*args, **kwargs)
 
     def __str__(self):

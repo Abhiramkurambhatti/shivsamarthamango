@@ -498,41 +498,52 @@ def admin_logout(request):
 def upload_product_image(request):
     """
     Direct upload endpoint for product photos from local device.
-    Saves to public uploads and returns web-accessible URL.
+    Supports single or multiple file uploads in one request.
+    Saves to public uploads and returns web-accessible URLs.
     """
-    file_obj = request.FILES.get("file") or request.FILES.get("image")
-    if not file_obj:
-        return Response({"error": "No file uploaded. Please select an image."}, status=status.HTTP_400_BAD_REQUEST)
+    files = (
+        request.FILES.getlist("files")
+        or request.FILES.getlist("images")
+        or ([request.FILES.get("file")] if "file" in request.FILES else [])
+        or ([request.FILES.get("image")] if "image" in request.FILES else [])
+    )
+    if not files:
+        return Response({"error": "No file uploaded. Please select one or more images."}, status=status.HTTP_400_BAD_REQUEST)
 
-    import os, re, time
-    ext = os.path.splitext(file_obj.name)[1].lower()
-    if ext not in [".jpg", ".jpeg", ".png", ".webp", ".svg"]:
-        return Response({"error": "Only JPG, PNG, WebP or SVG images are supported."}, status=status.HTTP_400_BAD_REQUEST)
-
-    safe_name = re.sub(r"[^a-zA-Z0-9_\-\.]", "_", file_obj.name)
-    filename = f"{int(time.time())}_{safe_name}"
-
-    # Save to frontend/public/uploads/ for instant Next.js serving
+    import os, re, time, shutil
+    saved_urls = []
     frontend_upload_dir = os.path.join(settings.BASE_DIR.parent, "frontend", "public", "uploads")
     os.makedirs(frontend_upload_dir, exist_ok=True)
-    target_path = os.path.join(frontend_upload_dir, filename)
+    backend_media_dir = os.path.join(settings.MEDIA_ROOT, "products")
+    os.makedirs(backend_media_dir, exist_ok=True)
 
-    with open(target_path, "wb+") as dest:
-        for chunk in file_obj.chunks():
-            dest.write(chunk)
+    for idx, file_obj in enumerate(files):
+        ext = os.path.splitext(file_obj.name)[1].lower()
+        if ext not in [".jpg", ".jpeg", ".png", ".webp", ".svg"]:
+            continue
 
-    # Also keep a copy in backend media/products
-    try:
-        backend_media_dir = os.path.join(settings.MEDIA_ROOT, "products")
-        os.makedirs(backend_media_dir, exist_ok=True)
-        import shutil
-        shutil.copyfile(target_path, os.path.join(backend_media_dir, filename))
-    except Exception:
-        pass
+        safe_name = re.sub(r"[^a-zA-Z0-9_\-\.]", "_", file_obj.name)
+        filename = f"{int(time.time())}_{idx}_{safe_name}"
+        target_path = os.path.join(frontend_upload_dir, filename)
+
+        with open(target_path, "wb+") as dest:
+            for chunk in file_obj.chunks():
+                dest.write(chunk)
+
+        try:
+            shutil.copyfile(target_path, os.path.join(backend_media_dir, filename))
+        except Exception:
+            pass
+
+        saved_urls.append(f"/uploads/{filename}")
+
+    if not saved_urls:
+        return Response({"error": "No valid image files were processed. Supported: JPG, PNG, WebP, SVG."}, status=status.HTTP_400_BAD_REQUEST)
 
     return Response({
         "success": True,
-        "url": f"/uploads/{filename}",
-        "filename": filename
+        "urls": saved_urls,
+        "url": saved_urls[0],
+        "count": len(saved_urls),
     })
 

@@ -11,6 +11,7 @@ export type Product = {
   compare_at_price?: string | number | null;
   stock_quantity: number;
   image_url: string;
+  images?: string[];
   available_units?: string[];
   unit_prices?: Record<string, number>;
   is_featured: boolean;
@@ -31,6 +32,12 @@ const fallback: Product[] = [
     compare_at_price: 2800,
     stock_quantity: 24,
     image_url: "/images/devgad-hapus.jpg",
+    images: [
+      "/images/devgad-hapus.jpg",
+      "/images/pulp-plate.jpg",
+      "/images/crate-straw.jpg",
+      "/images/official-box.jpg"
+    ],
     available_units: ["dozen", "box", "kg", "grams"],
     unit_prices: { dozen: 1440, box: 2400, kg: 480, grams: 240 },
     is_featured: true,
@@ -49,6 +56,12 @@ const fallback: Product[] = [
     compare_at_price: 2500,
     stock_quantity: 18,
     image_url: "/images/ratnagiri-hapus.jpg",
+    images: [
+      "/images/ratnagiri-hapus.jpg",
+      "/images/ripe-mangoes.jpg",
+      "/images/crate-straw.jpg",
+      "/images/gallery-1.jpg"
+    ],
     available_units: ["dozen", "box", "kg", "grams"],
     unit_prices: { dozen: 1320, box: 2200, kg: 440, grams: 220 },
     is_featured: true,
@@ -67,6 +80,12 @@ const fallback: Product[] = [
     compare_at_price: 1150,
     stock_quantity: 32,
     image_url: "/images/kesar-mango.jpg",
+    images: [
+      "/images/kesar-mango.jpg",
+      "/images/ripe-mangoes.jpg",
+      "/images/gallery-2.jpg",
+      "/images/gallery-4.jpg"
+    ],
     available_units: ["dozen", "box", "kg", "grams"],
     unit_prices: { dozen: 570, box: 950, kg: 317, grams: 158 },
     is_featured: true,
@@ -85,6 +104,12 @@ const fallback: Product[] = [
     compare_at_price: 2100,
     stock_quantity: 14,
     image_url: "/images/gift-box.jpg",
+    images: [
+      "/images/gift-box.jpg",
+      "/images/official-box.jpg",
+      "/images/trust-kolhe.jpg",
+      "/images/trust-mohol.jpg"
+    ],
     available_units: ["box", "dozen"],
     unit_prices: { box: 1800, dozen: 1200 },
     is_featured: true,

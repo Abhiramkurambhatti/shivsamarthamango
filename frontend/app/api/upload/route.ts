@@ -5,34 +5,56 @@ import path from "path";
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
-    const file = formData.get("file") as File | null || formData.get("image") as File | null;
+    const rawFiles = formData.getAll("files");
+    const fallbackFiles = formData.getAll("images");
+    const singleFile = formData.get("file") as File | null || formData.get("image") as File | null;
 
-    if (!file) {
-      return NextResponse.json({ error: "No image file provided." }, { status: 400 });
+    let filesToProcess: File[] = [];
+    if (rawFiles.length > 0) {
+      filesToProcess = rawFiles.filter((f): f is File => f instanceof File);
+    } else if (fallbackFiles.length > 0) {
+      filesToProcess = fallbackFiles.filter((f): f is File => f instanceof File);
+    } else if (singleFile) {
+      filesToProcess = [singleFile];
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Validate extension
-    const originalName = file.name || "mango_image.jpg";
-    const ext = path.extname(originalName).toLowerCase();
-    if (![".jpg", ".jpeg", ".png", ".webp", ".svg"].includes(ext)) {
-      return NextResponse.json({ error: "Only JPG, PNG, WebP or SVG images allowed." }, { status: 400 });
+    if (!filesToProcess.length) {
+      return NextResponse.json({ error: "No image files provided." }, { status: 400 });
     }
 
-    const safeName = originalName.replace(/[^a-zA-Z0-9_\-\.]/g, "_");
-    const filename = `${Date.now()}_${safeName}`;
     const uploadDir = path.join(process.cwd(), "public", "uploads");
-
     await mkdir(uploadDir, { recursive: true });
-    const filePath = path.join(uploadDir, filename);
-    await writeFile(filePath, buffer);
+
+    const savedUrls: string[] = [];
+
+    for (let idx = 0; idx < filesToProcess.length; idx++) {
+      const file = filesToProcess[idx];
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+
+      const originalName = file.name || "mango_image.jpg";
+      const ext = path.extname(originalName).toLowerCase();
+      if (![".jpg", ".jpeg", ".png", ".webp", ".svg"].includes(ext)) {
+        continue;
+      }
+
+      const safeName = originalName.replace(/[^a-zA-Z0-9_\-\.]/g, "_");
+      const filename = `${Date.now()}_${idx}_${safeName}`;
+      const filePath = path.join(uploadDir, filename);
+      await writeFile(filePath, buffer);
+
+      savedUrls.push(`/uploads/${filename}`);
+    }
+
+    if (!savedUrls.length) {
+      return NextResponse.json({ error: "No valid image formats found (JPG, PNG, WebP, SVG supported)." }, { status: 400 });
+    }
 
     return NextResponse.json({
       success: true,
-      url: `/uploads/${filename}`,
-      filename,
+      urls: savedUrls,
+      url: savedUrls[0],
+      count: savedUrls.length,
     });
   } catch (err: any) {
     console.error("Upload error:", err);

@@ -5,6 +5,7 @@ import { useStore } from "@/components/StoreProvider";
 import { WHATSAPP_NUMBER } from "@/lib/config";
 import { ShoppingCart, Award, CheckCircle2, ShieldCheck, ArrowLeft, Check, Sparkles } from "lucide-react";
 import Link from "next/link";
+import ProductImageSlider from "@/components/ProductImageSlider";
 
 export default function ProductDetail({ p }: { p: any }) {
   const s = useStore();
@@ -81,44 +82,43 @@ export default function ProductDetail({ p }: { p: any }) {
       </div>
 
       <div className="story-grid" style={{ alignItems: "start", gap: 44 }}>
-        {/* Natural Photo Styling */}
-        <div
-          style={{
-            borderRadius: 24,
-            overflow: "hidden",
-            border: "1.5px solid rgba(200, 154, 75, 0.35)",
-            background: "#fff",
-            boxShadow: "0 14px 40px rgba(0,0,0,0.06)",
-            position: "relative",
-          }}
-        >
-          <img
-            src={p.image_url}
-            alt={p.name}
-            style={{
-              width: "100%",
-              aspectRatio: "4 / 3",
-              objectFit: "cover",
-              display: "block",
-              filter: "contrast(1.03) saturate(1.06) brightness(1.01)",
-            }}
-          />
+        {/* Left Column: Interactive Product Photo Slider */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div
             style={{
-              position: "absolute",
-              top: 14,
-              left: 14,
-              background: "rgba(23, 43, 32, 0.9)",
-              color: "#ecd599",
-              padding: "5px 12px",
-              borderRadius: 8,
-              fontSize: 11,
-              fontWeight: 700,
-              backdropFilter: "blur(8px)",
-              border: "1px solid rgba(200, 154, 75, 0.4)",
+              borderRadius: 24,
+              overflow: "hidden",
+              border: "1.5px solid rgba(200, 154, 75, 0.35)",
+              background: "#fff",
+              boxShadow: "0 14px 40px rgba(0,0,0,0.06)",
+              position: "relative",
             }}
           >
-            🍃 {isMr ? "अस्सल देवगड नारिंग्रे बाग" : "100% Genuine Devgad Farm"}
+            <ProductImageSlider
+              images={p.images && p.images.length > 0 ? p.images : [p.image_url]}
+              fallbackImage={p.image_url || "/images/devgad-hapus.jpg"}
+              alt={p.name}
+              aspectRatio="4 / 3"
+            />
+            <div
+              style={{
+                position: "absolute",
+                top: 14,
+                left: 14,
+                background: "rgba(23, 43, 32, 0.9)",
+                color: "#ecd599",
+                padding: "5px 12px",
+                borderRadius: 8,
+                fontSize: 11,
+                fontWeight: 700,
+                backdropFilter: "blur(8px)",
+                border: "1px solid rgba(200, 154, 75, 0.4)",
+                pointerEvents: "none",
+                zIndex: 4,
+              }}
+            >
+              🍃 {isMr ? "अस्सल देवगड नारिंग्रे बाग" : "100% Genuine Devgad Farm"}
+            </div>
           </div>
         </div>
 

@@ -41,6 +41,8 @@ import {
   AlertCircle,
   Upload,
   Image as ImageIcon,
+  Star,
+  Camera,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────
@@ -61,6 +63,7 @@ export interface ProductItem {
   compare_at_price?: number | string | null;
   stock_quantity: number;
   image_url: string;
+  images?: string[];
   available_units?: string[];
   unit_prices?: Record<string, number>;
   is_featured: boolean;
@@ -1843,7 +1846,12 @@ function ProductsSection({
                     </div>
                     <div>
                       <div style={{ fontWeight: 700, color: "#172b20" }}>{prod.name}</div>
-                      {prod.name_mr && <div style={{ fontSize: 11, color: "#8d998d" }}>{prod.name_mr}</div>}
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                        {prod.name_mr && <span style={{ fontSize: 11, color: "#8d998d" }}>{prod.name_mr}</span>}
+                        <span style={{ fontSize: 10, background: "rgba(200, 154, 75, 0.15)", color: "#936417", padding: "1px 6px", borderRadius: 4, fontWeight: 700 }}>
+                          📷 {Array.isArray(prod.images) && prod.images.length > 0 ? prod.images.length : (prod.image_url ? 1 : 0)} slider photos
+                        </span>
+                      </div>
                     </div>
                   </td>
 
@@ -2853,10 +2861,53 @@ function ProductFormModal({
   const [comparePrice, setComparePrice] = useState(initialData?.compare_at_price ? String(initialData.compare_at_price) : "");
   const [weightKg, setWeightKg] = useState(initialData ? String(initialData.weight_kg) : "5");
   const [stockQuantity, setStockQuantity] = useState(initialData ? String(initialData.stock_quantity) : "20");
-  const [imageUrl, setImageUrl] = useState(initialData?.image_url || "/images/devgad-hapus.jpg");
   const [description, setDescription] = useState(initialData?.description || "");
   const [isActive, setIsActive] = useState(initialData?.is_active ?? true);
   const [isFeatured, setIsFeatured] = useState(initialData?.is_featured ?? true);
+
+  // Photos & Gallery Slider State (Multiple Photos Management)
+  const [images, setImages] = useState<string[]>(() => {
+    if (Array.isArray(initialData?.images) && initialData.images.length > 0) {
+      return initialData.images.filter((img) => typeof img === "string" && img.trim().length > 0);
+    }
+    if (initialData?.image_url) {
+      return [initialData.image_url];
+    }
+    return ["/images/devgad-hapus.jpg"];
+  });
+
+  const [imageUrl, setImageUrl] = useState<string>(
+    initialData?.image_url || (images[0] || "/images/devgad-hapus.jpg")
+  );
+
+  const [newUrlInput, setNewUrlInput] = useState<string>("");
+
+  // Set a photo as Primary Cover
+  const setAsPrimaryCover = (photoUrl: string) => {
+    setImageUrl(photoUrl);
+    setImages((prev) => [photoUrl, ...prev.filter((item) => item !== photoUrl)]);
+  };
+
+  // Remove a photo
+  const removePhoto = (photoUrl: string) => {
+    const updated = images.filter((item) => item !== photoUrl);
+    setImages(updated);
+    if (imageUrl === photoUrl) {
+      setImageUrl(updated[0] || "");
+    }
+  };
+
+  // Add photo by manual URL or preset
+  const addPhotoByUrl = (urlToAdd?: string) => {
+    const target = urlToAdd || newUrlInput;
+    if (!target.trim()) return;
+    const clean = target.trim();
+    if (!images.includes(clean)) {
+      setImages((prev) => [...prev, clean]);
+      if (!imageUrl || images.length === 0) setImageUrl(clean);
+    }
+    if (!urlToAdd) setNewUrlInput("");
+  };
 
   // Unit Options State (Dozen & Grams & Box & Kg)
   const defaultUnits = ["box", "dozen", "grams", "kg"];
@@ -2892,16 +2943,18 @@ function ProductFormModal({
     setUnitPrices((prev) => ({ ...prev, [u]: val }));
   };
 
-  // Direct file picker upload handler
+  // Direct file picker upload handler (supporting multiple photos from device)
   const handleDeviceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
 
     setUploading(true);
     setUploadError(null);
 
     const formData = new FormData();
-    formData.append("file", file);
+    for (let i = 0; i < fileList.length; i++) {
+      formData.append("files", fileList[i]);
+    }
 
     try {
       let res = await fetch("/api/upload", {
@@ -2917,18 +2970,29 @@ function ProductFormModal({
       }
 
       if (!res.ok) {
-        throw new Error("Failed to upload image. Please try another file.");
+        throw new Error("Failed to upload image(s). Please try another file.");
       }
 
       const data = await res.json();
-      if (data.url) {
-        setImageUrl(data.url);
+      const newUrls: string[] =
+        Array.isArray(data.urls) && data.urls.length > 0
+          ? data.urls
+          : data.url
+          ? [data.url]
+          : [];
+
+      if (newUrls.length > 0) {
+        setImages((prev) => [...prev, ...newUrls]);
+        if (!imageUrl || images.length === 0) {
+          setImageUrl(newUrls[0]);
+        }
       }
     } catch (err: any) {
       console.error(err);
       setUploadError(err.message || "Upload failed");
     } finally {
       setUploading(false);
+      e.target.value = "";
     }
   };
 
@@ -2954,6 +3018,12 @@ function ProductFormModal({
       }
     });
 
+    const finalCover = imageUrl || (images[0] || "/images/devgad-hapus.jpg");
+    const finalImagesList = images.length > 0 ? [...images] : [finalCover];
+    if (!finalImagesList.includes(finalCover)) {
+      finalImagesList.unshift(finalCover);
+    }
+
     const payload = {
       name,
       name_mr: nameMr,
@@ -2962,7 +3032,8 @@ function ProductFormModal({
       compare_at_price: comparePrice ? parseFloat(comparePrice) : null,
       weight_kg: wKg,
       stock_quantity: parseInt(stockQuantity) || 0,
-      image_url: imageUrl,
+      image_url: finalCover,
+      images: finalImagesList,
       description,
       available_units: availableUnits.length > 0 ? availableUnits : ["box"],
       unit_prices: finalUnitPrices,
@@ -3184,119 +3255,323 @@ function ProductFormModal({
             </div>
           </div>
 
-          {/* 4. ATTACH PHOTO & DIRECT DEVICE UPLOAD (Requirement 3) */}
+          {/* 4. MULTIPLE PHOTOS & SLIDER GALLERY MANAGEMENT (Requirement 2) */}
           <div
             style={{
               background: "#faf7f0",
               border: "1.5px solid #e9dfcf",
               borderRadius: 14,
-              padding: "14px 16px",
+              padding: "16px 18px",
             }}
           >
-            <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: "#172b20", marginBottom: 6 }}>
-              🖼️ Product Photo (Attach from Local Device or URL)
-            </label>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <label style={{ fontSize: 13, fontWeight: 700, color: "#172b20", margin: 0, display: "flex", alignItems: "center", gap: 6 }}>
+                <Camera size={15} color="#214638" />
+                <span>Product Photos Slider &amp; Gallery (एकाधिक फोटो व स्लायडर व्यवस्थापन)</span>
+              </label>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  padding: "3px 8px",
+                  borderRadius: 20,
+                  background: images.length > 1 ? "#ecfdf5" : "#fef3c7",
+                  color: images.length > 1 ? "#065f46" : "#92400e",
+                  border: `1px solid ${images.length > 1 ? "#a7f3d0" : "#fde68a"}`,
+                }}
+              >
+                📷 {images.length} {images.length === 1 ? "Photo" : "Photos in Slider"}
+              </span>
+            </div>
+
+            <p style={{ margin: "0 0 12px", fontSize: 11, color: "#687268" }}>
+              Upload multiple photos from your device, designate the <strong>Primary Cover Photo (★)</strong> for product listings, and remove or reorder photos for the interactive customer slider.
+            </p>
 
             {uploadError && (
-              <div style={{ padding: "6px 10px", background: "#fee2e2", color: "#b91c1c", borderRadius: 8, fontSize: 12, marginBottom: 10 }}>
+              <div style={{ padding: "8px 12px", background: "#fee2e2", color: "#b91c1c", borderRadius: 8, fontSize: 12, marginBottom: 12 }}>
                 {uploadError}
               </div>
             )}
 
-            <div style={{ display: "grid", gridTemplateColumns: "110px 1fr", gap: 14, alignItems: "center" }}>
-              {/* Image Preview Thumbnail */}
+            {/* Gallery Grid of Attached Photos */}
+            {images.length > 0 ? (
               <div
                 style={{
-                  width: 110,
-                  height: 85,
-                  borderRadius: 10,
-                  overflow: "hidden",
-                  border: "1.5px solid #d3cbbd",
-                  background: "#eee",
                   display: "grid",
-                  placeItems: "center",
-                  position: "relative",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(135px, 1fr))",
+                  gap: 12,
+                  marginBottom: 14,
                 }}
               >
-                {imageUrl ? (
-                  <img
-                    src={imageUrl}
-                    alt="Product preview"
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                {images.map((photo, idx) => {
+                  const isCover = photo === imageUrl || (idx === 0 && !imageUrl);
+                  return (
+                    <div
+                      key={`${photo}-${idx}`}
+                      style={{
+                        position: "relative",
+                        background: "#fff",
+                        borderRadius: 10,
+                        border: isCover ? "2px solid #214638" : "1.5px solid #d3cbbd",
+                        overflow: "hidden",
+                        boxShadow: isCover ? "0 4px 12px rgba(33, 70, 56, 0.18)" : "0 2px 6px rgba(0,0,0,0.04)",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
+                      {/* Image Thumbnail */}
+                      <div style={{ width: "100%", height: 95, position: "relative", background: "#eee" }}>
+                        <img
+                          src={photo}
+                          alt={`Product thumbnail ${idx + 1}`}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            filter: "contrast(1.03) saturate(1.05)",
+                          }}
+                        />
+
+                        {/* Primary Cover Badge */}
+                        {isCover && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: 6,
+                              left: 6,
+                              background: "#214638",
+                              color: "#fff",
+                              fontSize: 9,
+                              fontWeight: 800,
+                              padding: "2px 6px",
+                              borderRadius: 4,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 3,
+                              letterSpacing: "0.04em",
+                              boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                            }}
+                          >
+                            <Star size={10} fill="#fbbf24" color="#fbbf24" />
+                            COVER
+                          </div>
+                        )}
+
+                        {/* Slide order index badge */}
+                        <div
+                          style={{
+                            position: "absolute",
+                            bottom: 6,
+                            right: 6,
+                            background: "rgba(0,0,0,0.65)",
+                            color: "#fff",
+                            fontSize: 9,
+                            fontWeight: 700,
+                            padding: "1px 5px",
+                            borderRadius: 4,
+                          }}
+                        >
+                          #{idx + 1}
+                        </div>
+                      </div>
+
+                      {/* Photo Actions Footer */}
+                      <div
+                        style={{
+                          padding: "6px 8px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          background: isCover ? "#f4fbf7" : "#faf7f0",
+                          borderTop: "1px solid #e9dfcf",
+                          gap: 4,
+                        }}
+                      >
+                        {isCover ? (
+                          <span style={{ fontSize: 10, fontWeight: 700, color: "#214638" }}>
+                            ★ Primary Cover
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setAsPrimaryCover(photo)}
+                            title="Set as primary listing cover photo"
+                            style={{
+                              border: "none",
+                              background: "none",
+                              color: "#214638",
+                              fontSize: 10,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              padding: 0,
+                              textDecoration: "underline",
+                              textAlign: "left",
+                            }}
+                          >
+                            Make Cover
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(photo)}
+                          title="Remove this photo from slider"
+                          style={{
+                            border: "none",
+                            background: "transparent",
+                            cursor: "pointer",
+                            color: "#b91c1c",
+                            padding: "2px 4px",
+                            borderRadius: 4,
+                            display: "inline-flex",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div
+                style={{
+                  padding: "16px",
+                  textAlign: "center",
+                  background: "#fff",
+                  borderRadius: 10,
+                  border: "1.5px dashed #d3cbbd",
+                  marginBottom: 14,
+                  color: "#8d998d",
+                  fontSize: 12,
+                }}
+              >
+                No photos attached yet. Upload photos from your device below or add by URL.
+              </div>
+            )}
+
+            {/* Upload & Add Controls */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {/* Row 1: Direct File Picker (Multiple device files) */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <label
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "8px 16px",
+                    borderRadius: 10,
+                    background: "#214638",
+                    color: "#fff",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: uploading ? "wait" : "pointer",
+                    boxShadow: "0 2px 8px rgba(33, 70, 56, 0.25)",
+                  }}
+                >
+                  <Upload size={14} />
+                  <span>
+                    {uploading
+                      ? "फोटो अपलोड होत आहेत..."
+                      : "Upload Photos from Device (स्थानिक डिव्हाइसवरून फोटो निवडा)"}
+                  </span>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                    onChange={handleDeviceUpload}
+                    disabled={uploading}
+                    style={{ display: "none" }}
                   />
-                ) : (
-                  <span style={{ fontSize: 24 }}>🥭</span>
-                )}
-                {uploading && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      background: "rgba(0,0,0,0.6)",
-                      display: "grid",
-                      placeItems: "center",
-                      color: "#fff",
-                      fontSize: 10,
-                      fontWeight: 700,
-                    }}
-                  >
-                    Uploading...
-                  </div>
-                )}
+                </label>
+
+                <span style={{ fontSize: 11, color: "#8d998d" }}>
+                  Select one or multiple photos (JPG, PNG, WebP)
+                </span>
               </div>
 
-              {/* Upload Controls */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {/* Direct File Picker Input */}
-                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                  <label
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                      padding: "8px 16px",
-                      borderRadius: 10,
-                      background: "#214638",
-                      color: "#fff",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      cursor: uploading ? "wait" : "pointer",
-                      boxShadow: "0 2px 8px rgba(33, 70, 56, 0.25)",
-                    }}
-                  >
-                    <Upload size={14} />
-                    <span>{uploading ? "अपलोड होत आहे..." : "Upload from Device (स्थानिक फोटो निवडा)"}</span>
-                    <input
-                      type="file"
-                      accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                      onChange={handleDeviceUpload}
-                      disabled={uploading}
-                      style={{ display: "none" }}
-                    />
-                  </label>
+              {/* Row 2: Add by URL or local path */}
+              <div style={{ display: "flex", gap: 6 }}>
+                <input
+                  type="text"
+                  value={newUrlInput}
+                  onChange={(e) => setNewUrlInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addPhotoByUrl();
+                    }
+                  }}
+                  placeholder="Enter image URL or path e.g. /images/crate-straw.jpg"
+                  style={{
+                    flex: 1,
+                    padding: "7px 10px",
+                    borderRadius: 6,
+                    border: "1px solid #d3cbbd",
+                    fontSize: 12,
+                    background: "#fff",
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => addPhotoByUrl()}
+                  style={{
+                    padding: "7px 14px",
+                    borderRadius: 6,
+                    background: "#53735f",
+                    color: "#fff",
+                    border: "none",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <Plus size={13} />
+                  <span>Add URL</span>
+                </button>
+              </div>
 
-                  <span style={{ fontSize: 11, color: "#8d998d" }}>
-                    JPG, PNG, WebP (Max 10MB)
-                  </span>
-                </div>
-
-                {/* Direct URL field */}
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 11, color: "#687268", whiteSpace: "nowrap" }}>or Image Path:</span>
-                  <input
-                    type="text"
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    placeholder="/images/devgad-hapus.jpg or /uploads/..."
-                    style={{
-                      width: "100%",
-                      padding: "6px 10px",
-                      borderRadius: 6,
-                      border: "1px solid #d3cbbd",
-                      fontSize: 12,
-                      background: "#fff",
-                    }}
-                  />
+              {/* Row 3: Quick Preset Library (Original Mango Photos) */}
+              <div>
+                <span style={{ display: "block", fontSize: 11, color: "#687268", marginBottom: 6, fontWeight: 600 }}>
+                  ⚡ Quick Add Authentic Mango Photos to Slider:
+                </span>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {[
+                    { label: "+ Cut Pulp Plate", url: "/images/pulp-plate.jpg" },
+                    { label: "+ Straw Crate", url: "/images/crate-straw.jpg" },
+                    { label: "+ Official Box", url: "/images/official-box.jpg" },
+                    { label: "+ Ripe Alphonso", url: "/images/ripe-mangoes.jpg" },
+                    { label: "+ Devgad Tree", url: "/images/gallery-1.jpg" },
+                    { label: "+ Orchard Harvest", url: "/images/gallery-2.jpg" },
+                  ].map((preset) => {
+                    const alreadyAdded = images.includes(preset.url);
+                    return (
+                      <button
+                        key={preset.url}
+                        type="button"
+                        onClick={() => addPhotoByUrl(preset.url)}
+                        disabled={alreadyAdded}
+                        style={{
+                          fontSize: 11,
+                          padding: "4px 8px",
+                          borderRadius: 6,
+                          background: alreadyAdded ? "#e5e7eb" : "#ffffff",
+                          border: `1px solid ${alreadyAdded ? "#d1d5db" : "#cbd5e1"}`,
+                          color: alreadyAdded ? "#9ca3af" : "#334155",
+                          cursor: alreadyAdded ? "default" : "pointer",
+                          fontWeight: 500,
+                        }}
+                      >
+                        {preset.label} {alreadyAdded && "✓"}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>

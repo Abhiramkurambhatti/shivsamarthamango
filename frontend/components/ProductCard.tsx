@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ShoppingCart, ShieldCheck, Check, Sparkles, MessageCircle, Info } from "lucide-react";
 import { useStore } from "./StoreProvider";
 import { WHATSAPP_NUMBER } from "@/lib/config";
+import ProductImageSlider from "./ProductImageSlider";
 
 interface ProductCardProps {
   p: any;
@@ -98,116 +99,92 @@ export default function ProductCard({ p }: ProductCardProps) {
         position: "relative",
       }}
     >
-      {/* Product Image Frame with Natural Photo Enhancement */}
-      <Link href={`/product/${p.slug}`} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+      {/* Product Image Slider Container with Natural Photo Enhancement */}
+      <div style={{ position: "relative", width: "100%", overflow: "hidden" }}>
+        <Link href={`/product/${p.slug}`} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+          <ProductImageSlider
+            images={p.images && p.images.length > 0 ? p.images : [p.image_url]}
+            fallbackImage={p.image_url || "/images/devgad-hapus.jpg"}
+            alt={p.name}
+            aspectRatio="4 / 3"
+          />
+        </Link>
+
+        {/* Authentic GI Tag / Harvest Badge Overlay */}
         <div
           style={{
-            position: "relative",
-            width: "100%",
-            aspectRatio: "4 / 3",
-            overflow: "hidden",
-            background: "#f4ede2",
+            position: "absolute",
+            top: 12,
+            left: 12,
+            display: "flex",
+            flexDirection: "column",
+            gap: 4,
+            pointerEvents: "none",
+            zIndex: 4,
           }}
         >
-          <img
-            src={p.image_url || "/images/devgad-hapus.jpg"}
-            alt={p.name}
+          <span
             style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              objectPosition: "center",
-              display: "block",
-              /* Natural styling: gentle contrast & saturation to highlight genuine golden tones without artificial gloss */
-              filter: "contrast(1.03) saturate(1.06) brightness(1.01)",
-              transition: "transform 0.4s ease",
-            }}
-            loading="lazy"
-            className="natural-mango-img"
-          />
-
-          {/* Natural Vignette Overlay */}
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: "linear-gradient(to top, rgba(15, 28, 21, 0.45) 0%, rgba(15, 28, 21, 0) 45%)",
-              pointerEvents: "none",
-            }}
-          />
-
-          {/* Authentic GI Tag / Harvest Badge */}
-          <div
-            style={{
-              position: "absolute",
-              top: 12,
-              left: 12,
-              display: "flex",
-              flexDirection: "column",
+              background: "rgba(23, 43, 32, 0.92)",
+              color: "#ecd599",
+              fontSize: 10,
+              fontWeight: 700,
+              padding: "4px 9px",
+              borderRadius: 8,
+              backdropFilter: "blur(8px)",
+              border: "1px solid rgba(200, 154, 75, 0.5)",
+              letterSpacing: "0.03em",
+              display: "inline-flex",
+              alignItems: "center",
               gap: 4,
             }}
           >
+            <span>🌿</span> {mr ? "चालू बहर · आडीत पिकवलेला" : "Straw Ripened · GI Tagged"}
+          </span>
+
+          {p.category === "hapus" && (
             <span
               style={{
-                background: "rgba(23, 43, 32, 0.92)",
-                color: "#ecd599",
-                fontSize: 10,
-                fontWeight: 700,
-                padding: "4px 9px",
-                borderRadius: 8,
-                backdropFilter: "blur(8px)",
-                border: "1px solid rgba(200, 154, 75, 0.5)",
-                letterSpacing: "0.03em",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 4,
+                background: "rgba(200, 154, 75, 0.95)",
+                color: "#172b20",
+                fontSize: 9,
+                fontWeight: 800,
+                padding: "2px 7px",
+                borderRadius: 6,
+                letterSpacing: "0.05em",
+                textTransform: "uppercase",
+                width: "fit-content",
               }}
             >
-              <span>🌿</span> {mr ? "चालू बहर · आडीत पिकवलेला" : "Straw Ripened · GI Tagged"}
+              {mr ? "अस्सल देवगड" : "Devgad Laterite Soil"}
             </span>
-
-            {p.category === "hapus" && (
-              <span
-                style={{
-                  background: "rgba(200, 154, 75, 0.95)",
-                  color: "#172b20",
-                  fontSize: 9,
-                  fontWeight: 800,
-                  padding: "2px 7px",
-                  borderRadius: 6,
-                  letterSpacing: "0.05em",
-                  textTransform: "uppercase",
-                  width: "fit-content",
-                }}
-              >
-                {mr ? "अस्सल देवगड" : "Devgad Laterite Soil"}
-              </span>
-            )}
-          </div>
-
-          {/* Stock Health Tag */}
-          <div
-            style={{
-              position: "absolute",
-              bottom: 10,
-              right: 12,
-              background: "rgba(255, 255, 255, 0.92)",
-              color: "#166534",
-              fontSize: 10,
-              fontWeight: 700,
-              padding: "3px 8px",
-              borderRadius: 6,
-              backdropFilter: "blur(6px)",
-              display: "flex",
-              alignItems: "center",
-              gap: 5,
-            }}
-          >
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#16a34a", display: "inline-block" }} />
-            <span>{mr ? "थेट बागेतून उपलब्ध" : "Fresh in Stock"}</span>
-          </div>
+          )}
         </div>
-      </Link>
+
+        {/* Stock Health Tag Overlay */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: 10,
+            right: 12,
+            background: "rgba(255, 255, 255, 0.92)",
+            color: "#166534",
+            fontSize: 10,
+            fontWeight: 700,
+            padding: "3px 8px",
+            borderRadius: 6,
+            backdropFilter: "blur(6px)",
+            display: "flex",
+            alignItems: "center",
+            gap: 5,
+            pointerEvents: "none",
+            zIndex: 4,
+          }}
+        >
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#16a34a", display: "inline-block" }} />
+          <span>{mr ? "थेट बागेतून उपलब्ध" : "Fresh in Stock"}</span>
+        </div>
+      </div>
 
       {/* Product Body */}
       <div
