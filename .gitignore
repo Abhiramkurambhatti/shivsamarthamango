@@ -1,0 +1,20 @@
+# Dependencies
+frontend/node_modules/
+backend/.venv/
+.venv/
+
+# Build artifacts
+frontend/.next/
+backend/staticfiles/
+
+# Python cache & temporary files
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+
+# OS metadata & logs
+.DS_Store
+Thumbs.db
+*.log
+ezgif-*/
