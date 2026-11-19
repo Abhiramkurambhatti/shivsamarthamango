@@ -847,7 +847,7 @@ export default function AdminDashboard() {
           boxShadow: "0 2px 10px rgba(0,0,0,0.02)",
         }}
       >
-        <div style={{ maxWidth: 1400, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div className="admin-header-row" style={{ maxWidth: 1400, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
               <span style={{ width: 34, height: 34, borderRadius: "50%", background: "#c89a4b", display: "grid", placeItems: "center", color: "#fff", fontSize: 16 }}>
@@ -864,7 +864,7 @@ export default function AdminDashboard() {
             </Link>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div className="admin-header-actions" style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <span
               style={{
                 display: "inline-flex",
@@ -967,9 +967,10 @@ export default function AdminDashboard() {
       </header>
 
       {/* Main Container with Sidebar */}
-      <div style={{ maxWidth: 1400, margin: "24px auto", padding: "0 20px", display: "grid", gridTemplateColumns: "240px 1fr", gap: 24 }}>
+      <div className="admin-layout-container" style={{ maxWidth: 1400, margin: "24px auto", padding: "0 20px", display: "grid", gridTemplateColumns: "240px 1fr", gap: 24 }}>
         {/* SIDEBAR NAVIGATION */}
         <aside
+          className="admin-sidebar"
           style={{
             background: "#172b20",
             borderRadius: 20,
@@ -1387,7 +1388,7 @@ function OverviewSection({
       </div>
 
       {/* Main Analytics Row: Interactive Charts */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.45fr 1fr", gap: 20 }}>
+      <div className="admin-charts-grid" style={{ display: "grid", gridTemplateColumns: "1.45fr 1fr", gap: 20 }}>
         {/* CHART 1: REVENUE AND ORDERS TREND */}
         <div style={{ background: "#fff", border: "1px solid #e8e3d8", borderRadius: 20, padding: 24, boxShadow: "0 4px 18px rgba(0,0,0,0.03)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 18 }}>
@@ -1608,14 +1609,14 @@ function OverviewSection({
       </div>
 
       {/* Analytics Row 2: Revenue Financial Summary & Channel Split */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 20 }}>
+      <div className="admin-charts-grid" style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 20 }}>
         {/* Financial Summary */}
         <div style={{ background: "#fff", border: "1px solid #e8e3d8", borderRadius: 20, padding: 24, boxShadow: "0 4px 18px rgba(0,0,0,0.03)" }}>
           <h3 style={{ margin: "0 0 16px", fontFamily: "'Playfair Display', serif", fontSize: 18, color: "#172b20" }}>
             Revenue Breakdown &amp; Valuation
           </h3>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div className="admin-form-row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <div style={{ padding: 14, background: "#faf7f0", borderRadius: 14, border: "1px solid #e9e0d1" }}>
               <div style={{ fontSize: 11, color: "#687268", textTransform: "uppercase", fontWeight: 700 }}>Today&apos;s Revenue</div>
               <div style={{ fontSize: 22, fontWeight: 800, color: "#172b20", margin: "6px 0 2px" }}>
@@ -3078,6 +3079,7 @@ function ProductFormModal({
       }}
     >
       <div
+        className="admin-modal-content"
         style={{
           background: "#fff",
           borderRadius: 22,
@@ -3104,7 +3106,7 @@ function ProductFormModal({
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {/* 1. Name fields */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div className="admin-form-row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
               <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#687268", marginBottom: 4 }}>
                 Product Name (English)*
@@ -3133,7 +3135,7 @@ function ProductFormModal({
           </div>
 
           {/* 2. Category, Base Price, Weight */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+          <div className="admin-form-row-3" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
             <div>
               <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#687268", marginBottom: 4 }}>
                 Category*
@@ -3578,7 +3580,7 @@ function ProductFormModal({
           </div>
 
           {/* 5. Stock & Compare Price */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div className="admin-form-row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
               <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#687268", marginBottom: 4 }}>
                 Initial Stock Quantity (Boxes)
@@ -3854,6 +3856,7 @@ function OrderDetailsModal({
       }}
     >
       <div
+        className="admin-modal-content"
         style={{
           background: "#fff",
           borderRadius: 22,
@@ -3981,7 +3984,7 @@ function OrderDetailsModal({
             Fulfillment &amp; Status Transitions
           </h4>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div className="admin-form-row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
               <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#687268", marginBottom: 4 }}>
                 Change Order Pipeline Status
@@ -4160,7 +4163,7 @@ function EnquiryDetailsModal({
         padding: 20,
       }}
     >
-      <div style={{ background: "#fff", borderRadius: 22, padding: 28, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+      <div className="admin-modal-content" style={{ background: "#fff", borderRadius: 22, padding: 28, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
           <div>
             <h3 style={{ margin: 0, fontFamily: "'Playfair Display', serif", fontSize: 20, color: "#172b20" }}>

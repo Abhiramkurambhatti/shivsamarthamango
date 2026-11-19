@@ -156,7 +156,7 @@ export default function ProductDetail({ p }: { p: any }) {
               <span style={{ fontSize: 13, fontWeight: 800, color: "var(--gold)" }}>{currentUnitLabel}</span>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: `repeat(${availableUnits.length}, 1fr)`, gap: 8 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(75px, 1fr))", gap: 8 }}>
               {availableUnits.map((u) => {
                 const isActive = selectedUnit === u;
                 const priceForUnit = getUnitPrice(u);

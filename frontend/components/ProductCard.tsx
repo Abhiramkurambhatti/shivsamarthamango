@@ -259,7 +259,7 @@ export default function ProductCard({ p }: ProductCardProps) {
                   ? (mr ? "५००g" : "500g")
                   : u === "kg" || u === "1kg"
                   ? (mr ? "१ किलो" : "1 Kg")
-                  : (mr ? "पेटी (Box)" : "Box");
+                  : (mr ? "पेटी" : "Box");
 
               return (
                 <button
@@ -272,11 +272,14 @@ export default function ProductCard({ p }: ProductCardProps) {
                     border: "none",
                     background: isActive ? "var(--green)" : "transparent",
                     color: isActive ? "#ffffff" : "#4b5548",
-                    fontSize: 11,
+                    fontSize: "clamp(10px, 2.6vw, 11px)",
                     fontWeight: isActive ? 700 : 600,
                     cursor: "pointer",
                     textAlign: "center",
                     transition: "all 0.15s ease",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
                   }}
                 >
                   {label}

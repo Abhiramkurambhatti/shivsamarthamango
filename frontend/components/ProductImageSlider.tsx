@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, TouchEvent } from "react";
+import { useState, useRef, useEffect, TouchEvent } from "react";
 import { ChevronLeft, ChevronRight, Camera } from "lucide-react";
 
 interface ProductImageSliderProps {
@@ -9,6 +9,8 @@ interface ProductImageSliderProps {
   alt: string;
   aspectRatio?: string;
   showCounter?: boolean;
+  autoplay?: boolean;
+  autoplayInterval?: number;
 }
 
 export default function ProductImageSlider({
@@ -17,6 +19,8 @@ export default function ProductImageSlider({
   alt,
   aspectRatio = "4 / 3",
   showCounter = true,
+  autoplay = true,
+  autoplayInterval = 3500, // 3.5 seconds smooth cycling
 }: ProductImageSliderProps) {
   // Ensure we have a valid, non-empty list of photos
   const rawList = Array.isArray(images) && images.length > 0 ? images : [fallbackImage];
@@ -24,10 +28,58 @@ export default function ProductImageSlider({
   const slideList = photoList.length > 0 ? photoList : [fallbackImage || "/images/devgad-hapus.jpg"];
 
   const [currentIdx, setCurrentIdx] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
 
-  // Touch Swipe tracking
+  // Autoplay timers & touch tracking
+  const autoplayTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const resumeTimerRef = useRef<NodeJS.Timeout | null>(null);
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
+
+  const hasMultiple = slideList.length > 1;
+
+  // Autoplay Interval Effect
+  useEffect(() => {
+    if (!hasMultiple || !autoplay || isPaused) {
+      if (autoplayTimerRef.current) clearInterval(autoplayTimerRef.current);
+      return;
+    }
+
+    autoplayTimerRef.current = setInterval(() => {
+      setCurrentIdx((prev) => (prev === slideList.length - 1 ? 0 : prev + 1));
+    }, autoplayInterval);
+
+    return () => {
+      if (autoplayTimerRef.current) clearInterval(autoplayTimerRef.current);
+    };
+  }, [hasMultiple, autoplay, isPaused, autoplayInterval, slideList.length]);
+
+  // Pause autoplay when browser tab is inactive / backgrounded
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setIsPaused(true);
+      } else {
+        setIsPaused(false);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (autoplayTimerRef.current) clearInterval(autoplayTimerRef.current);
+      if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    };
+  }, []);
+
+  // Temporarily pause autoplay on manual action, then automatically resume after delay
+  const pauseAndResumeAfterDelay = (delayMs: number = 4500) => {
+    setIsPaused(true);
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    resumeTimerRef.current = setTimeout(() => {
+      setIsPaused(false);
+    }, delayMs);
+  };
 
   const prevSlide = (e?: React.MouseEvent) => {
     if (e) {
@@ -35,6 +87,7 @@ export default function ProductImageSlider({
       e.stopPropagation();
     }
     setCurrentIdx((prev) => (prev === 0 ? slideList.length - 1 : prev - 1));
+    pauseAndResumeAfterDelay(5000);
   };
 
   const nextSlide = (e?: React.MouseEvent) => {
@@ -43,15 +96,20 @@ export default function ProductImageSlider({
       e.stopPropagation();
     }
     setCurrentIdx((prev) => (prev === slideList.length - 1 ? 0 : prev + 1));
+    pauseAndResumeAfterDelay(5000);
   };
 
   const goToSlide = (idx: number, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setCurrentIdx(idx);
+    pauseAndResumeAfterDelay(5000);
   };
 
+  // Touch Swipe Handlers for mobile
   const handleTouchStart = (e: TouchEvent) => {
+    setIsPaused(true);
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
     touchStartX.current = e.targetTouches[0].clientX;
   };
 
@@ -60,23 +118,35 @@ export default function ProductImageSlider({
   };
 
   const handleTouchEnd = (e: TouchEvent) => {
-    if (touchStartX.current === null || touchEndX.current === null) return;
-    const distance = touchStartX.current - touchEndX.current;
-    const minSwipeDistance = 40; // 40px swipe threshold
+    if (touchStartX.current !== null && touchEndX.current !== null) {
+      const distance = touchStartX.current - touchEndX.current;
+      const minSwipeDistance = 35; // Responsive 35px swipe threshold
 
-    if (distance > minSwipeDistance) {
-      // Swiped left -> next photo
-      setCurrentIdx((prev) => (prev === slideList.length - 1 ? 0 : prev + 1));
-    } else if (distance < -minSwipeDistance) {
-      // Swiped right -> prev photo
-      setCurrentIdx((prev) => (prev === 0 ? slideList.length - 1 : prev - 1));
+      if (distance > minSwipeDistance) {
+        // Swiped left -> next photo
+        setCurrentIdx((prev) => (prev === slideList.length - 1 ? 0 : prev + 1));
+      } else if (distance < -minSwipeDistance) {
+        // Swiped right -> prev photo
+        setCurrentIdx((prev) => (prev === 0 ? slideList.length - 1 : prev - 1));
+      }
     }
 
     touchStartX.current = null;
     touchEndX.current = null;
+
+    // Resume autoplay smoothly after touch inspection
+    pauseAndResumeAfterDelay(4500);
   };
 
-  const hasMultiple = slideList.length > 1;
+  // Mouse Hover Handlers (Desktop)
+  const handleMouseEnter = () => {
+    setIsPaused(true);
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+  };
+
+  const handleMouseLeave = () => {
+    setIsPaused(false);
+  };
 
   return (
     <div
@@ -87,20 +157,24 @@ export default function ProductImageSlider({
         overflow: "hidden",
         background: "#f4ede2",
         userSelect: "none",
+        touchAction: "pan-y",
       }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="product-slider-container"
+      className="product-slider-container group"
     >
-      {/* Slide Images Container */}
+      {/* Slide Images Container with Smooth Hardware-Accelerated Transitions */}
       <div
         style={{
           width: "100%",
           height: "100%",
           display: "flex",
-          transform: `translateX(-${currentIdx * 100}%)`,
-          transition: "transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)",
+          transform: `translate3d(-${currentIdx * 100}%, 0, 0)`,
+          transition: "transform 0.45s cubic-bezier(0.25, 1, 0.5, 1)",
+          willChange: "transform",
         }}
       >
         {slideList.map((src, idx) => (
@@ -131,17 +205,17 @@ export default function ProductImageSlider({
         ))}
       </div>
 
-      {/* Subtle Bottom Shadow Vignette */}
+      {/* Subtle Bottom Vignette */}
       <div
         style={{
           position: "absolute",
           inset: 0,
-          background: "linear-gradient(to top, rgba(15, 28, 21, 0.5) 0%, rgba(15, 28, 21, 0) 40%)",
+          background: "linear-gradient(to top, rgba(15, 28, 21, 0.45) 0%, rgba(15, 28, 21, 0) 38%)",
           pointerEvents: "none",
         }}
       />
 
-      {/* Navigation Arrows (visible when multiple photos exist) */}
+      {/* Navigation Arrows (Visible on multiple photos) */}
       {hasMultiple && (
         <>
           <button
@@ -156,7 +230,7 @@ export default function ProductImageSlider({
               width: 32,
               height: 32,
               borderRadius: "50%",
-              border: "1px solid rgba(255, 255, 255, 0.4)",
+              border: "1px solid rgba(255, 255, 255, 0.45)",
               background: "rgba(23, 43, 32, 0.72)",
               backdropFilter: "blur(6px)",
               color: "#ffffff",
@@ -168,7 +242,7 @@ export default function ProductImageSlider({
               boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
               padding: 0,
             }}
-            className="slider-arrow"
+            className="slider-nav-arrow"
           >
             <ChevronLeft size={18} />
           </button>
@@ -185,7 +259,7 @@ export default function ProductImageSlider({
               width: 32,
               height: 32,
               borderRadius: "50%",
-              border: "1px solid rgba(255, 255, 255, 0.4)",
+              border: "1px solid rgba(255, 255, 255, 0.45)",
               background: "rgba(23, 43, 32, 0.72)",
               backdropFilter: "blur(6px)",
               color: "#ffffff",
@@ -197,14 +271,14 @@ export default function ProductImageSlider({
               boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
               padding: 0,
             }}
-            className="slider-arrow"
+            className="slider-nav-arrow"
           >
             <ChevronRight size={18} />
           </button>
         </>
       )}
 
-      {/* Pagination Dots */}
+      {/* Pagination Dots Indicator */}
       {hasMultiple && (
         <div
           style={{
@@ -216,7 +290,7 @@ export default function ProductImageSlider({
             alignItems: "center",
             gap: 5,
             zIndex: 6,
-            background: "rgba(0, 0, 0, 0.35)",
+            background: "rgba(0, 0, 0, 0.4)",
             backdropFilter: "blur(4px)",
             padding: "3px 8px",
             borderRadius: 99,
@@ -235,7 +309,7 @@ export default function ProductImageSlider({
                   height: 6,
                   borderRadius: 99,
                   border: "none",
-                  background: isActive ? "#ffd27d" : "rgba(255, 255, 255, 0.6)",
+                  background: isActive ? "#ffd27d" : "rgba(255, 255, 255, 0.65)",
                   cursor: "pointer",
                   padding: 0,
                   transition: "all 0.25s ease",

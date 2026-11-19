@@ -739,12 +739,34 @@ button {
   display: none;
 }
 
+/* Layout Grids */
+.story-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 36px;
+  align-items: start;
+}
+
+.product-slider-container {
+  touch-action: pan-y;
+}
+
+.slider-nav-arrow {
+  opacity: 0.9;
+}
+
+.slider-nav-arrow:hover {
+  opacity: 1;
+  transform: translateY(-50%) scale(1.08) !important;
+}
+
 /* Responsiveness */
 @media(max-width: 980px) {
   .navlinks { display: none; }
   .mobile-menu { display: inline-flex; }
   .hero-grid { grid-template-columns: 1fr; }
   .hero-image { min-height: 360px; }
+  .story-grid { grid-template-columns: 1fr; gap: 24px; }
   .dignitary-grid { grid-template-columns: repeat(2, 1fr); }
   .founder-grid { grid-template-columns: 1fr; }
   .founder-photo-card { position: static; }
@@ -753,25 +775,82 @@ button {
   .gallery-grid { grid-template-columns: repeat(2, 1fr); }
   .heritage { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr 1fr; }
+
+  /* Admin Dashboard Tablet Layout */
+  .admin-layout-container {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  .admin-sidebar {
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    padding: 10px 12px !important;
+    gap: 8px !important;
+    border-radius: 16px !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .admin-sidebar button {
+    white-space: nowrap !important;
+    padding: 8px 14px !important;
+    font-size: 12px !important;
+  }
+  .admin-header-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+  .admin-header-actions {
+    width: 100% !important;
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
 }
 
 @media(max-width: 600px) {
-  .container { width: min(100% - 28px, 1180px); }
-  .nav { height: 66px; }
-  .brand { font-size: 17px; }
-  .brandmark { width: 32px; height: 32px; }
-  .hero { padding-top: 24px; }
-  .hero-image { min-height: 280px; }
+  html, body {
+    overflow-x: hidden;
+  }
+  .container { width: min(100% - 24px, 1180px); }
+  .nav { height: 64px; }
+  .brand { font-size: 16px; gap: 8px; }
+  .brandmark { width: 30px; height: 30px; font-size: 15px; }
+  .desktop-admin-badge .admin-text { display: none; }
+  .desktop-admin-badge { padding: 7px 9px !important; }
+  .navtools { gap: 4px; }
+  .hero { padding-top: 20px; }
+  .hero-image { min-height: 260px; }
   .trustbar { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .dignitary-grid { grid-template-columns: 1fr; }
   .product-grid { grid-template-columns: 1fr; }
   .farming-grid { grid-template-columns: 1fr; }
   .gallery-grid { grid-template-columns: 1fr; }
-  .founder-photo-wrapper { height: 360px; }
+  .founder-photo-wrapper { height: 320px; }
   .founder-stats-strip { grid-template-columns: 1fr 1fr; }
-  .section { padding: 46px 0; }
+  .section { padding: 40px 0; }
   .section-head { flex-direction: column; align-items: flex-start; }
-  .footer-grid { grid-template-columns: 1fr; }
+  .footer-grid { grid-template-columns: 1fr; gap: 24px; }
   .form-grid { grid-template-columns: 1fr; }
   .field.full { grid-column: auto; }
+  .cartrow { grid-template-columns: 1fr auto; gap: 10px; }
+
+  /* Admin Dashboard Mobile Layout */
+  .admin-kpi-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+  .admin-form-row-2, .admin-form-row-3 {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+  .admin-modal-content {
+    padding: 20px 16px !important;
+    border-radius: 18px !important;
+    width: 95vw !important;
+    max-height: 92vh !important;
+  }
+  .slider-nav-arrow {
+    width: 28px !important;
+    height: 28px !important;
+  }
 }
